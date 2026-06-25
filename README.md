@@ -1,18 +1,18 @@
 # FlowDesk
 
-FlowDesk, onay ve talep süreçlerini yönetmek için geliştirilen full-stack bir uygulamadır. Proje iki ana bölümden oluşur:
+FlowDesk is a full-stack application built to manage request and approval workflows. The project consists of two main parts:
 
 - `flowdesk-backend`
 - `flowdesk-frontend`
 
-Local development aşamasında:
-- PostgreSQL, Docker Compose ile çalışır
-- Backend, lokal olarak `npm run dev` ile çalışır
-- Frontend, lokal olarak `npm run dev` ile çalışır
+In local development:
+- PostgreSQL runs with Docker Compose
+- The backend runs locally with `npm run dev`
+- The frontend runs locally with `npm run dev`
 
 ---
 
-<!-- ## Proje Yapısı
+## Project Structure
 
 ```text
 .
@@ -21,9 +21,9 @@ Local development aşamasında:
 └── compose.yaml
 ```
 
---- -->
+---
 
-## Teknolojiler
+## Tech Stack
 
 ### Backend
 - Node.js
@@ -33,9 +33,9 @@ Local development aşamasında:
 - Prisma ORM
 - Zod
 - JWT
-- Argon2 veya bcrypt
+- Argon2 or bcrypt
 - Swagger / OpenAPI
-- Vitest veya Jest
+- Vitest or Jest
 - Supertest
 - Docker
 - Docker Compose
@@ -59,9 +59,9 @@ Local development aşamasında:
 
 ---
 
-## Gereksinimler
+## Requirements
 
-Makinenizde şunların kurulu olması gerekir:
+Make sure these are installed on your machine:
 
 - Node.js 20+
 - npm 10+
@@ -72,15 +72,15 @@ Makinenizde şunların kurulu olması gerekir:
 
 ## Local Development
 
-### 1. PostgreSQL'i başlat
+### 1. Start PostgreSQL
 
-Root dizinde:
+From the root directory:
 
 ```bash
 docker compose up -d postgres
 ```
 
-PostgreSQL aşağıdaki ayarlarla çalışır:
+PostgreSQL runs with the following settings:
 
 - Host: `localhost`
 - Port: `5432`
@@ -88,7 +88,7 @@ PostgreSQL aşağıdaki ayarlarla çalışır:
 - User: `flowdesk`
 - Password: `flowdesk_dev_password`
 
-### 2. Backend'i çalıştır
+### 2. Start the backend
 
 ```bash
 cd flowdesk-backend
@@ -96,11 +96,11 @@ npm install
 npm run dev
 ```
 
-Backend varsayılan olarak `http://localhost:3000` üzerinde çalışır.
+The backend runs by default at `http://localhost:3000`.
 
-### 3. Frontend'i çalıştır
+### 3. Start the frontend
 
-Yeni bir terminal aç:
+Open a new terminal:
 
 ```bash
 cd flowdesk-frontend
@@ -108,17 +108,17 @@ npm install
 npm run dev
 ```
 
-Frontend varsayılan olarak Vite dev server üzerinde çalışır. Genelde `http://localhost:5173`.
+The frontend runs on the Vite dev server, usually at `http://localhost:5173`.
 
 ---
 
-## Environment Dosyaları
+## Environment Files
 
 ### Backend
 
-`flowdesk-backend/.env` dosyasını `.env.example` üzerinden oluştur.
+Create `flowdesk-backend/.env` from `.env.example`.
 
-Örnek:
+Example:
 
 ```env
 PORT=3000
@@ -133,9 +133,9 @@ JWT_REFRESH_EXPIRES_IN=7d
 
 ### Frontend
 
-`flowdesk-frontend/.env` dosyasını `.env.example` üzerinden oluştur.
+Create `flowdesk-frontend/.env` from `.env.example`.
 
-Örnek:
+Example:
 
 ```env
 VITE_API_BASE_URL=http://localhost:3000
@@ -146,25 +146,25 @@ VITE_ENABLE_MSW=true
 
 ## Docker Compose
 
-Bu aşamada Docker Compose sadece PostgreSQL için kullanılır.
+At this stage, Docker Compose is used only for PostgreSQL.
 
-`compose.yaml` içindeki aktif servis:
+Active service in `compose.yaml`:
 
 - `postgres`
 
-Başlatmak için:
+To start it:
 
 ```bash
 docker compose up -d postgres
 ```
 
-Durdurmak için:
+To stop it:
 
 ```bash
 docker compose down
 ```
 
-Volume'ları da silmek için:
+To remove volumes as well:
 
 ```bash
 docker compose down -v
@@ -172,11 +172,11 @@ docker compose down -v
 
 ---
 
-## Veritabanı
+## Database
 
-Backend Prisma kullanır.
+The backend uses Prisma.
 
-Yaygın komutlar:
+Common commands:
 
 ```bash
 cd flowdesk-backend
@@ -187,23 +187,23 @@ npx prisma studio
 
 ---
 
-## Test
+## Testing
 
-### Backend testleri
+### Backend tests
 
 ```bash
 cd flowdesk-backend
 npm run test
 ```
 
-### Frontend unit/integration testleri
+### Frontend unit/integration tests
 
 ```bash
 cd flowdesk-frontend
 npm run test
 ```
 
-### Frontend e2e testleri
+### Frontend e2e tests
 
 ```bash
 cd flowdesk-frontend
@@ -213,35 +213,35 @@ npm run e2e
 
 ---
 
-## Üretim Notu
+## Production Note
 
-Şu anda geliştirme sürecinde:
-- backend ve frontend lokal çalıştırılır
-- PostgreSQL Docker üzerinde çalışır
+At the current stage of development:
+- the backend and frontend run locally
+- PostgreSQL runs in Docker
 
-Deployment aşamasında:
-- backend containerize edilebilir
-- frontend build alınıp nginx ile servis edilebilir
-- frontend için `/api` proxy yapısı eklenebilir
+At deployment time:
+- the backend can be containerized
+- the frontend can be built and served with nginx
+- an `/api` proxy setup can be added for the frontend
 
-Bu yapı şimdilik bilerek sade tutulmuştur.
+This setup is intentionally kept simple for now.
 
 ---
 
 ## Git
 
-Bağımlılık klasörleri ve environment dosyaları Git'e eklenmez:
+Dependency folders and environment files should not be committed:
 
 - `node_modules`
 - `.env`
 - `dist`
 - `coverage`
 
-Root `.gitignore` buna göre yapılandırılmıştır.
+The root `.gitignore` is configured accordingly.
 
 ---
 
-## Başlangıç Komut Özeti
+## Quick Start Commands
 
 Root:
 
@@ -267,13 +267,13 @@ npm run dev
 
 ---
 
-<!-- ## Roadmap
+## Roadmap
 
-- Kimlik doğrulama ve yetkilendirme
-- Talep oluşturma ve listeleme
-- Onay akışları
-- Yorumlar
-- Bildirimler
-- Admin paneli
-- Swagger / OpenAPI dökümantasyonu
-- CI/CD ve production deployment -->
+- Authentication and authorization
+- Request creation and listing
+- Approval workflows
+- Comments
+- Notifications
+- Admin panel
+- Swagger / OpenAPI documentation
+- CI/CD and production deployment
