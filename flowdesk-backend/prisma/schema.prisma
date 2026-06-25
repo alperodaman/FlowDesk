@@ -1,0 +1,233 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  isActive     Boolean   @default(true)
+  departmentId String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime? // soft delete
+
+  department   Department?           @relation(fields: [departmentId], references: [id])
+  userRoles    UserRole[]
+  requests     Request[]             @relation("RequesterRequests")
+  approvalSteps ApprovalStepInstance[] @relation("AssigneeSteps")
+  refreshTokens RefreshToken[]
+  comments     Comment[]
+  auditLogs    AuditLog[]            @relation("ActorLogs")
+  notifications Notification[]
+
+  @@index([email])
+  @@index([departmentId])
+  @@index([isActive])
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique // EMPLOYEE, MANAGER, ADMIN
+  description String?
+  isSystem    Boolean  @default(false)
+
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+}
+
+model Permission {
+  id   String @id @default(cuid())
+  code String @unique // request:create, approval:approve, etc.
+
+  rolePermissions RolePermission[]
+}
+
+model UserRole {
+  userId String
+  roleId String
+
+  user User @relation(fields: [userId], references: [id])
+  role Role @relation(fields: [roleId], references: [id])
+
+  @@id([userId, roleId])
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id])
+  permission Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+}
+
+model Department {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  managerId String?
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  users    User[]
+  requests Request[]
+}
+
+model RequestType {
+  id          String   @id @default(cuid())
+  code        String   @unique // PURCHASE, LEAVE, ACCESS
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  // fieldDefinitions RequestFieldDefinition[]
+  requests         Request[]
+  // workflows        Workflow[]
+}
+
+model Request {
+  id             String    @id @default(cuid())
+  requesterId    String
+  departmentId   String
+  requestTypeId  String
+  title          String
+  description    String?
+  status         String    @default("DRAFT") // RequestStatus enum değeri
+  amount         Decimal?  @db.Decimal(18, 2) // Purchase için
+  currency       String?   @default("TRY")
+  priority       String?   // LOW, MEDIUM, HIGH
+  workflowSnapshot Json?   // Submit anındaki workflow snapshot
+  version        Int       @default(0) // Optimistic locking için
+  submittedAt    DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  requester     User           @relation("RequesterRequests", fields: [requesterId], references: [id])
+  department    Department     @relation(fields: [departmentId], references: [id])
+  requestType   RequestType    @relation(fields: [requestTypeId], references: [id])
+  // fieldValues   RequestFieldValue[]
+  approvalSteps ApprovalStepInstance[]
+  comments      Comment[]
+  // auditLogs     AuditLog[]
+
+  @@index([requesterId])
+  @@index([status])
+  @@index([requestTypeId])
+  @@index([departmentId])
+  @@index([createdAt])
+}
+
+model ApprovalStepInstance {
+  id          String    @id @default(cuid())
+  requestId   String
+  assigneeId  String
+  stepOrder   Int
+  status      String    @default("PENDING") // ApprovalStatus enum
+  dueAt       DateTime?
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  request  Request  @relation(fields: [requestId], references: [id])
+  assignee User     @relation("AssigneeSteps", fields: [assigneeId], references: [id])
+  actions  ApprovalAction[]
+
+  @@unique([requestId, stepOrder]) // Aynı sırada iki step olamaz
+  @@index([assigneeId, status]) // "Benim pending onaylarım" sorgusu için kritik
+  @@index([requestId])
+}
+
+model ApprovalAction {
+  id          String   @id @default(cuid())
+  stepId      String
+  actorId     String
+  action      String   // APPROVED, REJECTED
+  comment     String?
+  createdAt   DateTime @default(now())
+  // Immutable: update yasak, sadece insert
+
+  step  ApprovalStepInstance @relation(fields: [stepId], references: [id])
+  @@index([stepId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  requestId String
+  authorId  String
+  content   String
+  isInternal Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  request Request @relation(fields: [requestId], references: [id])
+  author  User    @relation(fields: [authorId], references: [id])
+
+  @@index([requestId])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  actorId      String?
+  action       String   // REQUEST_CREATED, REQUEST_SUBMITTED, STEP_APPROVED, etc.
+  entityType   String
+  entityId     String
+  beforeState  Json?
+  afterState   Json?
+  metadata     Json?
+  ipAddress    String?
+  userAgent    String?
+  correlationId String?
+  createdAt    DateTime @default(now())
+  // Immutable: update/delete yasak
+
+  actor User? @relation("ActorLogs", fields: [actorId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([createdAt])
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique // SHA-256 hash — plain token saklanmaz
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // APPROVAL_ASSIGNED, REQUEST_APPROVED, etc.
+  title     String
+  body      String
+  data      Json?    // Deep link için entityId, entityType
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+}
