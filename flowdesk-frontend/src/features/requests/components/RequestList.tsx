@@ -1,33 +1,43 @@
-import { Link } from 'react-router-dom';
 import { useRequests } from '../hooks/useRequests';
+import { RequestTable } from './RequestTable';
+import { RequestCard } from './RequestCard';
+import { LoadingSpinner } from '@/shared/components/feedback/LoadingSpinner';
+import { ErrorState } from '@/shared/components/feedback/ErrorState';
+import { EmptyState } from '@/shared/components/data-display/EmptyState';
+import { IconClipboardList } from '@/shared/components/ui/icons';
 
-export function RequestList() {
-  const { data, isLoading, isError } = useRequests();
+interface RequestListProps {
+  search?: string;
+  status?: string;
+  type?: string;
+}
+
+export function RequestList({ search, status, type }: RequestListProps) {
+  const { data, isLoading, isError, refetch } = useRequests();
 
   if (isLoading) {
-    return <p>Yükleniyor...</p>;
+    return <LoadingSpinner center />;
   }
 
   if (isError) {
-    return <p>Request listesi alınamadı.</p>;
+    return (
+      <ErrorState
+        title="Could not load requests"
+        description="There was an error loading your requests. Please try again."
+        onRetry={refetch}
+      />
+    );
   }
 
   if (!data?.length) {
-    return <p>Henüz request yok.</p>;
+    return (
+      <EmptyState
+        icon={<IconClipboardList size={28} />}
+        title="No requests found"
+        description="You haven't created any requests yet, or none match your filters."
+      />
+    );
   }
 
-  return (
-    <div className="overflow-hidden rounded-xl bg-white shadow-sm">
-      <ul className="divide-y">
-        {data.map((request) => (
-          <li key={request.id} className="p-4">
-            <Link to={`/requests/${request.id}`} className="flex items-center justify-between">
-              <span className="font-medium">{request.title}</span>
-              <span className="text-sm text-slate-500">{request.status}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+  return <RequestTable requests={data} />;
 }
