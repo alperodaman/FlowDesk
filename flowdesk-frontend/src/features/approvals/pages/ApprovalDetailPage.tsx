@@ -4,20 +4,14 @@ import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { Button } from '@/shared/components/ui/Button';
 import { Card } from '@/shared/components/data-display/Card';
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
-import { RequestStatusBadge } from '../components/RequestStatusBadge';
-import { RequestTimeline } from '../components/RequestTimeline';
 import { Avatar } from '@/shared/components/ui/Avatar';
 import { Modal } from '@/shared/components/ui/Modal';
-import { Textarea } from '@/shared/components/ui/Textarea';
 import { FormField } from '@/shared/components/ui/FormField';
+import { Textarea } from '@/shared/components/ui/Textarea';
+import { Alert } from '@/shared/components/feedback/Alert';
+import { RequestTimeline } from '@/features/requests/components/RequestTimeline';
 import { ROUTES } from '@/constants/routes';
-import {
-  IconArrowLeft,
-  IconEdit,
-  IconCheckCircle,
-  IconXCircle,
-} from '@/shared/components/ui/icons';
-import type { RequestStatus } from '@/types/domain.types';
+import { IconArrowLeft, IconCheckCircle, IconXCircle } from '@/shared/components/ui/icons';
 
 type ApprovalStatus = 'pending' | 'approved' | 'rejected';
 
@@ -27,30 +21,28 @@ interface Approver {
   status: ApprovalStatus;
 }
 
-interface MockRequest {
+interface MockApproval {
   id: string;
   title: string;
+  requester: { name: string; email: string; department: string };
   type: string;
-  status: RequestStatus;
   priority: string;
+  submittedAt: string;
+  status: ApprovalStatus;
   description: string;
-  createdAt: string;
-  requester: { name: string; email: string };
-  department: string;
   approvers: Approver[];
 }
 
-const MOCK_REQUEST: MockRequest = {
-  id: '1',
+const MOCK: MockApproval = {
+  id: 'a1',
   title: 'Laptop Purchase Request',
+  requester: { name: 'Alice Kim', email: 'alice@company.com', department: 'Engineering' },
   type: 'Purchase',
-  status: 'submitted',
   priority: 'High',
+  submittedAt: 'Jun 28, 2026 at 09:14',
+  status: 'pending',
   description:
     'I need a new MacBook Pro 14" for development work. My current laptop is 4 years old and is struggling with our build times. This will significantly improve productivity.',
-  createdAt: 'Jun 28, 2026 at 09:14',
-  requester: { name: 'Alice Kim', email: 'alice@company.com' },
-  department: 'Engineering',
   approvers: [
     { name: 'Bob Carter', role: 'Manager', status: 'approved' },
     { name: 'You', role: 'Finance', status: 'pending' },
@@ -59,63 +51,63 @@ const MOCK_REQUEST: MockRequest = {
 
 const MOCK_TIMELINE = [
   { id: '1', title: 'Request created', description: 'Created by Alice Kim', timestamp: 'Jun 28, 2026 at 09:14', type: 'created' as const },
-  { id: '2', title: 'Request submitted', description: 'Sent for approval', timestamp: 'Jun 28, 2026 at 09:15', type: 'submitted' as const },
+  { id: '2', title: 'Submitted for approval', timestamp: 'Jun 28, 2026 at 09:15', type: 'submitted' as const },
+  { id: '3', title: 'Approved by Bob Carter', description: 'Manager approval granted', timestamp: 'Jun 28, 2026 at 11:40', type: 'approved' as const },
 ];
 
-const approvalStatusMap: Record<ApprovalStatus, 'pending' | 'approved' | 'rejected'> = {
-  pending: 'pending',
-  approved: 'approved',
-  rejected: 'rejected',
-};
-
-export function RequestDetailPage() {
-  const { id } = useParams();
+export function ApprovalDetailPage() {
+  const { id: _id } = useParams();
   const navigate = useNavigate();
+  const [approved, setApproved] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+  const [rejected, setRejected] = useState(false);
 
-  const request = MOCK_REQUEST;
-  const canEdit = request.status === 'draft';
-  const canDecide = request.status === 'submitted';
+  const request = MOCK;
+  const canDecide = request.status === 'pending' && !approved && !rejected;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title={request.title}
+        title="Review Request"
         action={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              leftIcon={<IconArrowLeft size={15} />}
-              onClick={() => navigate(ROUTES.REQUESTS)}
-            >
-              Back
-            </Button>
-            {canEdit && (
-              <Button variant="outline" size="sm" leftIcon={<IconEdit size={15} />}>
-                Edit
-              </Button>
-            )}
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            leftIcon={<IconArrowLeft size={15} />}
+            onClick={() => navigate(ROUTES.APPROVALS)}
+          >
+            Back to Approvals
+          </Button>
         }
       />
 
+      {approved && (
+        <Alert variant="success" title="Request approved">
+          You have approved this request. The requester has been notified.
+        </Alert>
+      )}
+      {rejected && (
+        <Alert variant="danger" title="Request rejected">
+          You have rejected this request. The requester has been notified.
+        </Alert>
+      )}
+
       <div className="grid gap-6 xl:grid-cols-3">
-        {/* Left — main info */}
+        {/* Left */}
         <div className="space-y-5 xl:col-span-2">
           <Card>
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-ink">Request Details</h2>
-              <RequestStatusBadge status={request.status} />
+              <h2 className="text-base font-semibold text-ink">{request.title}</h2>
+              <StatusBadge status={request.status} />
             </div>
 
             <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
               {[
-                { label: 'Request Type', value: request.type },
+                { label: 'Type', value: request.type },
                 { label: 'Priority', value: request.priority },
-                { label: 'Department', value: request.department },
-                { label: 'Submitted', value: request.createdAt },
+                { label: 'Department', value: request.requester.department },
+                { label: 'Submitted', value: request.submittedAt },
               ].map(({ label, value }) => (
                 <div key={label}>
                   <dt className="text-xs font-medium text-ink-muted">{label}</dt>
@@ -123,8 +115,8 @@ export function RequestDetailPage() {
                 </div>
               ))}
               <div className="col-span-2">
-                <dt className="text-xs font-medium text-ink-muted">Requester</dt>
-                <dd className="mt-1 flex items-center gap-2">
+                <dt className="text-xs font-medium text-ink-muted">Requested by</dt>
+                <dd className="mt-1 flex items-center gap-2.5">
                   <Avatar name={request.requester.name} size="sm" />
                   <div>
                     <p className="text-sm font-medium text-ink">{request.requester.name}</p>
@@ -143,9 +135,16 @@ export function RequestDetailPage() {
           {canDecide && (
             <Card>
               <h2 className="mb-4 text-sm font-semibold text-ink">Your Decision</h2>
-              <div className="flex gap-3">
-                <Button leftIcon={<IconCheckCircle size={16} />} className="flex-1 sm:flex-none">
-                  Approve
+              <p className="mb-5 text-sm text-ink-muted">
+                Review the request above and choose to approve or reject.
+              </p>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Button
+                  leftIcon={<IconCheckCircle size={16} />}
+                  className="flex-1 sm:flex-none"
+                  onClick={() => setApproved(true)}
+                >
+                  Approve Request
                 </Button>
                 <Button
                   variant="danger"
@@ -153,14 +152,14 @@ export function RequestDetailPage() {
                   onClick={() => setRejectOpen(true)}
                   className="flex-1 sm:flex-none"
                 >
-                  Reject
+                  Reject Request
                 </Button>
               </div>
             </Card>
           )}
         </div>
 
-        {/* Right — sidebar */}
+        {/* Right */}
         <div className="space-y-5">
           <Card>
             <h2 className="mb-4 text-sm font-semibold text-ink">Approval Chain</h2>
@@ -174,7 +173,7 @@ export function RequestDetailPage() {
                       <p className="text-xs text-ink-muted">{a.role}</p>
                     </div>
                   </div>
-                  <StatusBadge status={approvalStatusMap[a.status]} size="sm" />
+                  <StatusBadge status={a.status} size="sm" />
                 </li>
               ))}
             </ul>
@@ -197,7 +196,7 @@ export function RequestDetailPage() {
             <Button
               variant="danger"
               disabled={!rejectReason.trim()}
-              onClick={() => { setRejectOpen(false); setRejectReason(''); }}
+              onClick={() => { setRejected(true); setRejectOpen(false); setRejectReason(''); }}
             >
               Confirm Rejection
             </Button>
@@ -205,12 +204,12 @@ export function RequestDetailPage() {
         }
       >
         <p className="mb-4 text-sm text-ink-muted">
-          Please provide a reason for rejecting this request. The requester will be notified.
+          Please provide a reason so the requester understands why their request was rejected.
         </p>
         <FormField label="Rejection Reason" htmlFor="rejectReason" required>
           <Textarea
             id="rejectReason"
-            placeholder="e.g. Budget not approved for Q3…"
+            placeholder="e.g. Budget not available for this quarter…"
             rows={4}
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}

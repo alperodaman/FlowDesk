@@ -1,31 +1,55 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { AppShell } from '@/shared/components/layout/AppShell';
 import { ProtectedRoute } from '@/shared/components/guards/ProtectedRoute';
 import { ROUTES } from '@/constants/routes';
+
 import { LoginPage } from '@/features/auth/pages/LoginPage';
+import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
 import { RequestListPage } from '@/features/requests/pages/RequestListPage';
 import { CreateRequestPage } from '@/features/requests/pages/CreateRequestPage';
 import { RequestDetailPage } from '@/features/requests/pages/RequestDetailPage';
-
-function HomePage() {
-  return <div className="text-lg font-medium">Flow Desk dashboard</div>;
-}
+import { ApprovalListPage } from '@/features/approvals/pages/ApprovalListPage';
+import { ApprovalDetailPage } from '@/features/approvals/pages/ApprovalDetailPage';
+import { NotificationListPage } from '@/features/notifications/pages/NotificationListPage';
+import { UserListPage } from '@/features/admin/pages/UserListPage';
 
 const router = createBrowserRouter([
+  /* ── Public ── */
+  {
+    path: ROUTES.LOGIN,
+    element: <LoginPage />,
+  },
+
+  /* ── Auth-gated app shell ── */
+  {
+    element: (
+      <ProtectedRoute>
+        <AppShell>
+          {/* outlet rendered by children below */}
+          <></>
+        </AppShell>
+      </ProtectedRoute>
+    ),
+    children: [],
+  },
+
+  /* ── Protected pages (individually wrapped) ── */
   {
     path: ROUTES.HOME,
     element: (
-      <AppShell>
-        <HomePage />
-      </AppShell>
+      <ProtectedRoute>
+        <Navigate to={ROUTES.DASHBOARD} replace />
+      </ProtectedRoute>
     ),
   },
   {
-    path: ROUTES.LOGIN,
+    path: ROUTES.DASHBOARD,
     element: (
-      <AppShell>
-        <LoginPage />
-      </AppShell>
+      <ProtectedRoute>
+        <AppShell>
+          <DashboardPage />
+        </AppShell>
+      </ProtectedRoute>
     ),
   },
   {
@@ -49,7 +73,7 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: '/requests/:id',
+    path: ROUTES.REQUEST_DETAIL,
     element: (
       <ProtectedRoute>
         <AppShell>
@@ -57,6 +81,52 @@ const router = createBrowserRouter([
         </AppShell>
       </ProtectedRoute>
     ),
+  },
+  {
+    path: ROUTES.APPROVALS,
+    element: (
+      <ProtectedRoute>
+        <AppShell>
+          <ApprovalListPage />
+        </AppShell>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: ROUTES.APPROVAL_DETAIL,
+    element: (
+      <ProtectedRoute>
+        <AppShell>
+          <ApprovalDetailPage />
+        </AppShell>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: ROUTES.NOTIFICATIONS,
+    element: (
+      <ProtectedRoute>
+        <AppShell>
+          <NotificationListPage />
+        </AppShell>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: ROUTES.ADMIN_USERS,
+    element: (
+      <ProtectedRoute>
+        <AppShell>
+          <UserListPage />
+        </AppShell>
+      </ProtectedRoute>
+    ),
+  },
+
+  /* ── Fallback ── */
+  {
+    path: '*',
+    element: <Navigate to={ROUTES.DASHBOARD} replace />,
   },
 ]);
 
